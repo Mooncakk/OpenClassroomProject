@@ -1,9 +1,5 @@
 
-
-<<<<<<< HEAD
 from os import truncate
-=======
->>>>>>> 628aa5c (ajout de definition)
 import requests
 from bs4 import BeautifulSoup
 from lxml import html
