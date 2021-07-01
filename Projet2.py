@@ -5,10 +5,9 @@ from lxml import html
 import csv
 from urllib.parse import urljoin
 
+url = 'http://books.toscrape.com/catalogue/join_902/index.html'
 
-
-response = requests.get("http://books.toscrape.com/catalogue/join_902/index.html")
-url = response.url
+response = requests.get(url)
 soup = BeautifulSoup(response.content, "lxml")
 
 
@@ -29,7 +28,7 @@ data = {
     'Category' : sel("a", 3).text,
     'Review_rating' : sel("td", 6).text,
     'Image_url': image
-}
+        }
 
 
 with open('data_books.csv', 'w', newline='') as csvfile:
