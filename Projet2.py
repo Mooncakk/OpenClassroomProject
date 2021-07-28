@@ -13,11 +13,13 @@ def get_page(url):
     return BeautifulSoup(response.content, 'lxml')
 
 def sel(lien, tag, num=0):
+    #Fonction qui execute notre soup
     info = get_page(lien).select(tag)
     return info[num]
 
 
 def get_book_data():
+    #Extrait les infos du livre
     image = urljoin(url, sel('img')['src'])
     data = {
     'Product_page_url': url ,
