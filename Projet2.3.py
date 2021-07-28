@@ -1,11 +1,10 @@
 
 import requests
-from bs4 import BeautifulSoup
-from lxml import html
-from urllib.parse import urljoin
-import math
 import csv
-
+import math
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+from lxml import html
 
 url = 'http://books.toscrape.com/index.html'
 
@@ -99,12 +98,45 @@ def csv_headlines():
         )
   return headlines
 
+def csv_file_headlines(category_link):
+  #Création de l'entête du fichier CSV
+  category_name = get_category_name(category_link)
+  headlines = csv_headlines()
+  with open('Category_' + category_name + '_Books.csv', 'w') as csvfile:
+    writer = csv.DictWriter(csvfile, delimiter = ';', fieldnames=headlines)
+    writer.writeheader()
+
+def csv_file_creation(category_link, book_link):
+  #Création du fichier csv au nom de la catégorie
+  category_name = get_category_name(category_link)
+  book_data = get_book_data(book_link)
+  with open('Category_' + category_name + '_Books.csv', 'a') as csvfile:
+    writer = csv.writer(csvfile, delimiter=';')
+    writer.writerow(book_data)
 
 
-        
+def get_image(book_link):
+    #Enregistre l'image de chaque livre
+    image = urljoin(book_link, sel(book_link,'.item > img')['src'])  
+    image_response = requests.get(image)
+    book_name = get_book_data(book_link)[2]
+    with open (book_name + '.jpg', 'wb') as imagefile:
+        imagefile.write(image_response.content)
 
-
-
+def main():
+  #Boucle sur les URL des catégories stocké dans une liste, y récupère les URL des livres pour en extraire les données et crée le fichier CSV
+    get_books_category_links()
+    for link in books_category_links:
+        pagination(link)
+        #csv_file_headlines(link)
+        category_name = get_category_name(link)
+        category_link = link
+        #print(category_name)
+        for link in books_links:
+            #csv_file_creation(category_link, link)
+            get_image(link)
+            #print(i)
+        break
 
 """Récuperer les liens des livres de chaque categorie"""
 """Extraire les infos de chaque livres"""
