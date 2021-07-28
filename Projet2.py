@@ -48,5 +48,5 @@ def create_csv_file():
         writer.writeheader()
         writer.writerow(book_data)
 
-#create_csv_file()
+create_csv_file()
 
