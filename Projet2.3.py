@@ -1,15 +1,19 @@
 
-import requests
 import csv
 import math
-from bs4 import BeautifulSoup
+import os
+import time
 from urllib.parse import urljoin
+
+import requests
+from bs4 import BeautifulSoup
 from lxml import html
 
 url = 'http://books.toscrape.com/index.html'
 
 
 def get_page(url):
+    #Contenu de la page web
     response = requests.get(url)
     return BeautifulSoup(response.content, 'lxml')
 
@@ -34,28 +38,23 @@ def get_page_number(category_link, a=0):
   nb_pages = math.ceil(int(nb_livres.text) / 20)
   return nb_pages + a
 
-books_links = []
 
 def get_books_links(category_link):
-#Récupère les liens des livres d'une page et les stock dans une liste --> books_links
+#Récupère les liens des livres d'une page, et extrait les données de chaque livre les images
     articles = get_page(category_link).select('h3')
     for tag in articles:
         a = tag.select_one('a')
         link = urljoin (category_link, a['href'])
-        books_links.append(link)
-
+        csv_file_creation(category_link, link)
+        get_image(link, category_link)
 
 def pagination(category_link): 
-# Boucle qui recupère le lien de la page suivante et éxecute la fonction qui récupère les URL des livres d'une page
+# Recupère le lien de la page suivante et éxecute la fonction qui récupère les URL des livres d'une page
   get_books_links(category_link)
   if get_page_number(category_link) > 1:
-    for page_number in range(2,get_page_number(category_link,1)):
-      
+    for page_number in range(2,get_page_number(category_link,1)):      
         next_page_url = urljoin(category_link,'page-'+ str(page_number)+'.html')
         get_books_links(next_page_url)
-  else:
-    return
-  return
 
 
 def sel(lien, tag, num = 0):
@@ -98,11 +97,18 @@ def csv_headlines():
         )
   return headlines
 
+def create_directory(category_link):
+  #Créer le répertoire pour chaque catégorie et images 
+  category_name = get_category_name(category_link)
+  os.mkdir(f'{category_name}/')
+  os.mkdir(f'{category_name}/images/')
+
 def csv_file_headlines(category_link):
   #Création de l'entête du fichier CSV
   category_name = get_category_name(category_link)
   headlines = csv_headlines()
-  with open('Category_' + category_name + '_Books.csv', 'w') as csvfile:
+  create_directory(category_link)
+  with open(f'{category_name}/' + 'Category_' + category_name + '_Books.csv', 'w') as csvfile:
     writer = csv.DictWriter(csvfile, delimiter = ';', fieldnames=headlines)
     writer.writeheader()
 
@@ -110,35 +116,32 @@ def csv_file_creation(category_link, book_link):
   #Création du fichier csv au nom de la catégorie
   category_name = get_category_name(category_link)
   book_data = get_book_data(book_link)
-  with open('Category_' + category_name + '_Books.csv', 'a') as csvfile:
+  with open(f'{category_name}/' + 'Category_' + category_name + '_Books.csv', 'a') as csvfile:
     writer = csv.writer(csvfile, delimiter=';')
     writer.writerow(book_data)
 
 
-def get_image(book_link):
-    #Enregistre l'image de chaque livre
+def get_image(book_link, category_link):
+    #Enregistre l'image de chaque livre dans le dossir dédié
     image = urljoin(book_link, sel(book_link,'.item > img')['src'])  
     image_response = requests.get(image)
-    book_name = get_book_data(book_link)[2]
-    with open (book_name + '.jpg', 'wb') as imagefile:
-        imagefile.write(image_response.content)
+    upc = get_book_data(book_link)[1]
+    category_name = get_category_name(category_link)
+    with open (f'{category_name}/images/' + upc + '.jpg', 'wb') as imagefile:
+      imagefile.write(image_response.content)
 
 def main():
   #Boucle sur les URL des catégories stocké dans une liste, y récupère les URL des livres pour en extraire les données et crée le fichier CSV
+    start = time.time()
     get_books_category_links()
     for link in books_category_links:
-        pagination(link)
-        #csv_file_headlines(link)
         category_name = get_category_name(link)
-        category_link = link
-        #print(category_name)
-        for link in books_links:
-            #csv_file_creation(category_link, link)
-            get_image(link)
-            #print(i)
-        break
-
-"""Récuperer les liens des livres de chaque categorie"""
-"""Extraire les infos de chaque livres"""
-"""Écrire les infos des livres dans un fichier CSV par catégorie"""
-"""télécharger et enregistrer l'image de chaque livre"""
+        print(f'Extraction des livres de la catégorie {category_name} en cours...')
+        csv_file_headlines(link)
+        pagination(link)
+    print('Extraction Terminé !')
+    end = time.time()
+    elapsed = end - start
+    print(f"Temps d'éxécution : {elapsed}")
+       
+main()      
